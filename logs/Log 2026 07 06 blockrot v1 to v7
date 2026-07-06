@@ -1,0 +1,46 @@
+# BLOCKROT Development Log — 2026-07-06 (v1 → v7)
+
+## Objective
+
+Build a browser-based 3D zombie survival game from scratch as a single HTML file, iterating it from a top-down prototype into an open-world roguelite with enough depth to eventually justify an itch.io playtest and a Steam release path. Establish the repo this log lives in.
+
+## What Was Accomplished
+
+Seven major versions in one extended session, all single-file (Three.js r128 + vanilla JS, zero external assets):
+
+- **v1** — Top-down twin-stick Boxhead prototype: 4 weapons, exploding barrels, wave spawner.
+- **v2** — Over-the-shoulder third-person rebuild: pointer lock, main menu, 3 themed maps, 4 characters with distinct stats.
+- **v3** — Control overhaul (fixed inverted yaw + swapped strafe), jump, XP gems with level-up choices (pick 1 of 3), timed powerups, orbitals, bosses every 5 waves, crits with floating damage numbers, combo multiplier, minimap, top-10 local high scores.
+- **v4** — Open-world jump: 4x map size (496u) with ring-spawning enemies, sky domes / stars / moon / horizon silhouettes per zone, detailed block models with walk animations, enemy health bars, dash with i-frames, gamepad support, procedural synthwave music engine, coin economy with permanent meta shop, 16 upgrades with rarity tiers, 4 weapon evolutions, 2 unlockable characters, victory at wave 20 + endless mode, random events (supply drops, horde surges, elite packs).
+- **v5** — Mobile touch support (virtual joystick, drag-aim, on-screen buttons, aim-assist toggle), 3 new weapons (flamer, charge-up railgun, grenade launcher) with evolutions, 3 new enemies (exploder, tank with rear weak spot, necromancer), 3-phase boss with telegraphed charge, 6 character ultimates, 8 achievements unlocking cosmetics, daily seeded runs with separate leaderboard, GRIT second-chance shop item, boss reward chests (choice of 3 Epics), persistent gore decals, destructible cars, FPS counter.
+- **v6** — Mystery Box system: relocating crate, stand-to-buy channel, escalating price (100 × 1.5 per spin), spin animation, 9 box-exclusive weapons (Raygun, Arc Caster, Cryo Blaster, Doomsday, Singularity, Seeker Swarm, Venom Sprayer, Chainsaw, Stormcaller). Four bug fixes: grenade contact detonation, boss telegraph placement, zombie/player hard collision, minimap arrow orientation.
+- **v7** — UI pass: splash screen → main menu (Play / Daily / Shop / Scores / Stats / Medals / Settings) → loadout flow, fixed weapon-bar and cosmetic-picker contrast.
+
+Final file: ~174 KB, two script blocks, all systems verified by automated feature checks + Node syntax validation.
+
+## Challenges & Resolutions
+
+- **Third-person camera math** — first attempt had horizontal look inverted and A/D swapped. Resolved by deriving the basis vectors on paper: `yaw -= movementX`, right vector = `(-cos yaw, sin yaw)`. Lesson: don't guess signs in rotation math.
+- **Boss telegraph misplacement** — rotating a ground plane with `rotation.x` then `rotation.z` compounded Euler rotations unpredictably. Resolved by replacing the plane with a thin box oriented purely by `rotation.y` (yaw), eliminating the axis ambiguity.
+- **Zombies clipping into the player** — soft flocking separation wasn't a collision system. Added hard push-out resolution (project the zombie to the combined-radius boundary every frame).
+- **Grenades passing through enemies** — projectile only tested fuse/ground/walls. Added per-frame proximity detonation against enemies.
+- **Sandboxed storage** — `localStorage` throws in sandboxed iframes. Wrapped all persistence in a try/catch store with in-memory fallback so the game runs anywhere.
+- **Three.js r128 limitations** — no CapsuleGeometry or OrbitControls at this version; all characters/props are composed from primitives, camera is hand-rolled.
+- **Single-file scale** — 170 KB of source can't be written in one pass. Built in staged parts (constants/UI, entities, game loop) spliced together, with `node --check` per script block and grep-based feature checklists after every build. Late-stage changes applied as surgical patch sets (~40 verified string replacements) rather than rewrites to avoid regressions.
+
+## What I Learned
+
+- Iterative scope negotiation beats big-bang builds: confirming each feature batch before implementation kept every version shippable.
+- Roguelite "feel" comes from stacked small systems (crits, combos, rarities, evolutions, events) more than any single mechanic.
+- Verification without a runtime is possible but limited: syntax checks and feature greps catch structure, not tuning — playtesting is the only source of truth for game feel.
+- Procedural audio (Web Audio oscillators/noise) is viable for a full soundtrack + ~40 SFX with zero assets.
+- Euler rotation order, seeded PRNGs (mulberry32) for daily runs, touch-event identifier tracking for multi-touch controls.
+
+## Next Steps
+
+- [ ] Playtest v7 on desktop + phone; tune box-weapon damage, touch sensitivity, and zombie collision feel
+- [ ] Restructure into Vite + ES modules in this repo (modules: engine, entities, weapons, ui, audio); bundle Three.js as an npm dependency
+- [ ] Add GitHub Actions CI (lint + build) — doubles as the homelab CI/CD learning project
+- [ ] itch.io playtest build for external feedback
+- [ ] Backend leaderboard API (self-hosted on the homelab) for global daily runs
+- [ ] Longer term: Electron wrapper + Steamworks ($100 app fee, store page, Next Fest demo)
